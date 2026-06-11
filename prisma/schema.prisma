@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id                Int                @id @default(autoincrement())
+  email             String             @unique
+  password          String
+  name              String
+  createdAt         DateTime           @default(now())
+
+  babies            Baby[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Baby {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  name      String
+  birthDate DateTime  @db.Date
+  gender    String?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])  // ← 추가!
+  feedings  Feeding[]
+  meals     Meal[]
+}
+
+model Feeding {
+  id          Int      @id @default(autoincrement())
+  babyId      Int
+  type        String
+  amountMl    Int?
+  durationMin Int?
+  fedAt       DateTime @db.Timestamptz
+  createdAt   DateTime @default(now())
+
+  baby        Baby     @relation(fields: [babyId], references: [id])
+}
+
+model Meal {
+  id        Int      @id @default(autoincrement())
+  babyId    Int
+  menu      String
+  amountG   Int?
+  reaction  String?
+  memo      String?
+  eatenAt   DateTime @db.Timestamptz
+  createdAt DateTime @default(now())
+
+  baby      Baby     @relation(fields: [babyId], references: [id])
+}
