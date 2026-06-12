@@ -22,6 +22,8 @@ import { NotificationModule } from './notification/notification.module';
     MealModule,
     FoodGuideModule,
     NotificationModule,
+    ScheduleModule.forRoot(),
+    NotificationModule,
   ],
 })
 export class AppModule {}

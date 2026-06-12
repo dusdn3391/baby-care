@@ -167,6 +167,26 @@ exports.Prisma.MealScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.NotificationSettingScalarFieldEnum = {
+  id: 'id',
+  babyId: 'babyId',
+  type: 'type',
+  mode: 'mode',
+  intervalMin: 'intervalMin',
+  fixedTimes: 'fixedTimes',
+  enabled: 'enabled',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.NotificationLogScalarFieldEnum = {
+  id: 'id',
+  babyId: 'babyId',
+  type: 'type',
+  scheduledAt: 'scheduledAt',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -188,7 +208,9 @@ exports.Prisma.ModelName = {
   User: 'User',
   Baby: 'Baby',
   Feeding: 'Feeding',
-  Meal: 'Meal'
+  Meal: 'Meal',
+  NotificationSetting: 'NotificationSetting',
+  NotificationLog: 'NotificationLog'
 };
 
 /**

@@ -40,6 +40,8 @@ model Baby {
   user      User      @relation(fields: [userId], references: [id])  // ← 추가!
   feedings  Feeding[]
   meals     Meal[]
+    notificationSettings NotificationSetting[]
+  notificationLogs     NotificationLog[]
 }
 
 model Feeding {
@@ -65,4 +67,28 @@ model Meal {
   createdAt DateTime @default(now())
 
   baby      Baby     @relation(fields: [babyId], references: [id])
+}
+
+model NotificationSetting {
+  id          Int      @id @default(autoincrement())
+  babyId      Int
+  type        String   // 'feeding' | 'meal'
+  mode        String   // 'interval' | 'fixed'
+  intervalMin Int?     // mode='interval'일 때 (예: 180 = 3시간)
+  fixedTimes  String?  // mode='fixed'일 때, "09:00,13:00,17:00" 형태
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  baby        Baby     @relation(fields: [babyId], references: [id])
+}
+
+model NotificationLog {
+  id          Int      @id @default(autoincrement())
+  babyId      Int
+  type        String   // 'feeding' | 'meal'
+  scheduledAt DateTime // 알림이 발송된(또는 예정된) 시각
+  status      String   @default("pending") // 'pending' | 'done' | 'skipped'
+  createdAt   DateTime @default(now())
+
+  baby        Baby     @relation(fields: [babyId], references: [id])
 }

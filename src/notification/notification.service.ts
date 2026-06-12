@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as webpush from 'web-push';
 import { SubscribeDto } from './dto/subscribe.dto';
-import { subHours, startOfDay, endOfDay } from 'date-fns';
+import { CreateSettingDto } from './dto/create-setting.dto';
+import { RespondLogDto } from './dto/respond-log.dto';
 
 @Injectable()
 export class NotificationService {
@@ -14,15 +15,14 @@ export class NotificationService {
     private prisma: PrismaService,
     private config: ConfigService,
   ) {
-    // VAPID 설정
     webpush.setVapidDetails(
-      this.config.get('VAPID_MAILTO'),
-      this.config.get('VAPID_PUBLIC_KEY'),
-      this.config.get('VAPID_PRIVATE_KEY'),
+      this.config.get<string>('VAPID_MAILTO') as string,
+      this.config.get<string>('VAPID_PUBLIC_KEY') as string,
+      this.config.get<string>('VAPID_PRIVATE_KEY') as string,
     );
   }
 
-  // 구독 저장
+  // ===== 구독 관리 =====
   async subscribe(userId: number, dto: SubscribeDto) {
     return this.prisma.pushSubscription.upsert({
       where: { endpoint: dto.endpoint },
@@ -36,30 +36,27 @@ export class NotificationService {
     });
   }
 
-  // 구독 취소
   async unsubscribe(userId: number, endpoint: string) {
-    return this.prisma.pushSubscription.deleteMany({
-      where: { userId, endpoint },
-    });
+    return this.prisma.pushSubscription.deleteMany({ where: { userId, endpoint } });
   }
 
-  // 특정 유저에게 알림 전송
-  async sendNotification(userId: number, title: string, body: string) {
-    const subscriptions = await this.prisma.pushSubscription.findMany({
-      where: { userId },
-    });
+  getVapidPublicKey() {
+    return { publicKey: this.config.get('VAPID_PUBLIC_KEY') };
+  }
 
-    const payload = JSON.stringify({ title, body });
+  // ===== 알림 발송 =====
+  async sendNotification(userId: number, payload: Record<string, any>) {
+    const subscriptions = await this.prisma.pushSubscription.findMany({ where: { userId } });
+    const body = JSON.stringify(payload);
 
     for (const sub of subscriptions) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload,
+          body,
         );
       } catch (e: any) {
         this.logger.error(`알림 전송 실패: ${e.message}`);
-        // 만료된 구독 삭제
         if (e.statusCode === 410) {
           await this.prisma.pushSubscription.delete({ where: { id: sub.id } });
         }
@@ -67,67 +64,129 @@ export class NotificationService {
     }
   }
 
-  // 🍼 매 30분마다 수유 알림 체크
-  @Cron('0 */30 * * * *')
-  async checkFeedingAlerts() {
-    this.logger.log('수유 알림 체크 중...');
-    const babies = await this.prisma.baby.findMany({
-      include: { user: true },
+  // ===== 알림 설정 CRUD =====
+  async createSetting(dto: CreateSettingDto) {
+    return this.prisma.notificationSetting.upsert({
+      where: {
+        // babyId + type 조합으로 1개만 유지하고 싶다면 unique 제약을 schema에 추가해도 됨
+        id: await this.findSettingId(dto.babyId, dto.type) ?? -1,
+      },
+      update: {
+        mode: dto.mode,
+        intervalMin: dto.intervalMin,
+        fixedTimes: dto.fixedTimes,
+        enabled: dto.enabled ?? true,
+      },
+      create: {
+        babyId: dto.babyId,
+        type: dto.type,
+        mode: dto.mode,
+        intervalMin: dto.intervalMin,
+        fixedTimes: dto.fixedTimes,
+        enabled: dto.enabled ?? true,
+      },
     });
-
-    for (const baby of babies) {
-      const lastFeeding = await this.prisma.feeding.findFirst({
-        where: { babyId: baby.id },
-        orderBy: { fedAt: 'desc' },
-      });
-
-      if (!lastFeeding) continue;
-
-      const hoursSinceLast =
-        (Date.now() - lastFeeding.fedAt.getTime()) / (1000 * 60 * 60);
-
-      // 마지막 수유 후 3시간 이상 지났으면 알림
-      if (hoursSinceLast >= 3) {
-        const hours = Math.floor(hoursSinceLast);
-        await this.sendNotification(
-          baby.userId,
-          '🍼 수유 시간이에요!',
-          `${baby.name}이(가) 마지막 수유 후 ${hours}시간이 지났어요.`,
-        );
-      }
-    }
   }
 
-  // 🥕 매일 오전 9시, 오후 1시, 오후 5시 이유식 알림
-  @Cron('0 0 9,13,17 * * *')
-  async checkMealAlerts() {
-    this.logger.log('이유식 알림 체크 중...');
-    const babies = await this.prisma.baby.findMany({
-      include: { user: true },
+  private async findSettingId(babyId: number, type: string) {
+    const existing = await this.prisma.notificationSetting.findFirst({ where: { babyId, type } });
+    return existing?.id;
+  }
+
+  getSettings(babyId: number) {
+    return this.prisma.notificationSetting.findMany({ where: { babyId } });
+  }
+  async deleteSetting(id: number) {
+    return this.prisma.notificationSetting.delete({ where: { id } });
+  }
+  // ===== 알림 로그 (응답 처리) =====
+  getPendingLogs(babyId: number) {
+    return this.prisma.notificationLog.findMany({
+      where: { babyId, status: 'pending' },
+      orderBy: { scheduledAt: 'desc' },
+    });
+  }
+
+  async respondLog(dto: RespondLogDto) {
+    return this.prisma.notificationLog.update({
+      where: { id: dto.logId },
+      data: { status: dto.status },
+    });
+  }
+
+  // ===== Cron: 1분마다 체크 =====
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkSchedules() {
+  const now = new Date();
+  this.logger.log(`⏰ Cron 실행: ${now.toLocaleTimeString('ko-KR')}`);    const settings = await this.prisma.notificationSetting.findMany({
+      where: { enabled: true },
+      include: { baby: { include: { user: true, feedings: { orderBy: { fedAt: 'desc' }, take: 1 }, meals: { orderBy: { eatenAt: 'desc' }, take: 1 } } } },
     });
 
-    for (const baby of babies) {
-      const now = new Date();
-      const todayMeals = await this.prisma.meal.findMany({
+    for (const setting of settings) {
+      const shouldFire = this.shouldFireNow(setting, now);
+      if (!shouldFire) continue;
+
+      // 같은 시간대(±5분) 중복 발송 방지: 최근 10분 내 같은 type의 pending/done 로그가 있으면 skip
+      const recent = await this.prisma.notificationLog.findFirst({
         where: {
-          babyId: baby.id,
-          eatenAt: { gte: startOfDay(now), lte: endOfDay(now) },
+          babyId: setting.babyId,
+          type: setting.type,
+          scheduledAt: { gte: new Date(now.getTime() - 10 * 60 * 1000) },
+        },
+      });
+      if (recent) continue;
+
+      const log = await this.prisma.notificationLog.create({
+        data: {
+          babyId: setting.babyId,
+          type: setting.type,
+          scheduledAt: now,
+          status: 'pending',
         },
       });
 
-      // 오늘 이유식을 아직 안 먹였으면 알림
-      if (todayMeals.length === 0) {
-        await this.sendNotification(
-          baby.userId,
-          '🥕 이유식 시간이에요!',
-          `${baby.name}이(가) 오늘 아직 이유식을 먹지 않았어요.`,
-        );
-      }
+      const baby = setting.baby;
+      const title = setting.type === 'feeding' ? '🍼 수유 시간이에요!' : '🍽️ 이유식 시간이에요!';
+      const body = `${baby.name}의 ${setting.type === 'feeding' ? '수유' : '이유식'} 시간이 다가왔어요. 기록하셨나요?`;
+
+      await this.sendNotification(baby.userId, {
+        title,
+        body,
+        data: { logId: log.id, type: setting.type, babyId: setting.babyId },
+        actions: [
+          { action: 'done', title: '✅ 했어요' },
+          { action: 'skip', title: '⏭️ 아직요' },
+        ],
+      });
     }
   }
 
-  // VAPID 공개키 반환 (프론트엔드에서 구독 시 필요)
-  getVapidPublicKey() {
-    return { publicKey: this.config.get('VAPID_PUBLIC_KEY') };
+  private shouldFireNow(setting: any, now: Date): boolean {
+    if (setting.mode === 'fixed') {
+      if (!setting.fixedTimes) return false;
+      const times = setting.fixedTimes.split(',').map((t: string) => t.trim());
+      return times.some((t: string) => {
+        const [h, m] = t.split(':').map(Number);
+        const diffMin = Math.abs((now.getHours() * 60 + now.getMinutes()) - (h * 60 + m));
+        return diffMin <= 5;
+      });
+    }
+
+    if (setting.mode === 'interval') {
+      if (!setting.intervalMin) return false;
+      const baby = setting.baby;
+      const last = setting.type === 'feeding'
+        ? baby.feedings?.[0]?.fedAt
+        : baby.meals?.[0]?.eatenAt;
+
+      if (!last) return false;
+
+      const elapsedMin = (now.getTime() - new Date(last).getTime()) / (60 * 1000);
+      return Math.abs(elapsedMin - setting.intervalMin) <= 5;
+    }
+
+    return false;
   }
+  
 }
