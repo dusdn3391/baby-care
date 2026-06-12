@@ -5,9 +5,9 @@ import Button from '@/components/common/Button';
 import { CreateFeedingInput } from '@/types/feeding';
 
 const feedingTypes = [
-  { value: 'breast', label: '🤱 모유' },
-  { value: 'formula', label: '🍼 분유' },
-  { value: 'mixed', label: '🔀 혼합' },
+ { value: 'breast' as const, label: '🤱 모유' },
+  { value: 'formula' as const, label: '🍼 분유' },
+  { value: 'mixed' as const, label: '🔀 혼합' },
 ];
 
 interface FeedingFormProps {
