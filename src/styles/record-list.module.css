@@ -1,0 +1,140 @@
+.statBanner {
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+}
+
+.statBanner.yellow {
+  background: #FDF1D9;
+  border: 1px solid #F5E3BC;
+}
+
+.statBanner.mint {
+  background: #EEF2F7;
+  border: 1px solid #DCE4ED;
+}
+
+.statBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.statBannerTitle.yellow { color: #B8860B; }
+.statBannerTitle.mint { color: #6B85A8; }
+
+.statBannerSub {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.statBannerSub.yellow { color: #C9A668; }
+.statBannerSub.mint { color: #9BB0CC; }
+
+.tagRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-card);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.tag.yellow { color: #B8860B; }
+.tag.mint { color: #6B85A8; }
+
+.listTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+.emptyBox {
+  background: var(--color-card);
+  border-radius: var(--radius-xl);
+  padding: 40px 0;
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.listWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  background: var(--color-card);
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  border: 1px solid var(--color-border);
+}
+
+.itemIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.itemIcon.yellow { background: #FDF1D9; }
+.itemIcon.mint { background: #EEF2F7; }
+
+.itemBody {
+  flex: 1;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.itemSub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.itemTime {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.addBtn {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+
+.headerRight {
+  margin-left: auto;
+}

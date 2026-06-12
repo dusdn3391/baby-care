@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { useBabies } from '@/hooks/useBaby';
@@ -7,92 +7,133 @@ import { useFeeding } from '@/hooks/useFeeding';
 import { useMeal } from '@/hooks/useMeal';
 import Loading from '@/components/common/Loading';
 import BottomNav from '@/components/common/BottomNav';
-import BabyProfile from '@/components/dashboard/BabyProfile';
-import StatsCard from '@/components/dashboard/StatsCard';
-import QuickAction from '@/components/dashboard/QuickAction';
+import Link from 'next/link';
+import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
   const { babies, loading: babiesLoading } = useBabies();
   const baby = babies[0] ?? null;
-  const { stats: feedingStats } = useFeeding(baby?.id ?? 0);
+  const { stats: feedingStats, feedings } = useFeeding(baby?.id ?? 0);
   const { stats: mealStats } = useMeal(baby?.id ?? 0);
 
   useEffect(() => {
-    if (!user) { router.push('/login'); return; }
-  }, [user]);
+    if (!hasHydrated) return;
+    if (!user) router.push('/login');
+  }, [hasHydrated, user]);
 
   useEffect(() => {
+    if (!hasHydrated || !user) return;
     if (!babiesLoading && babies.length === 0) {
       router.push('/babies/new');
     }
-  }, [babiesLoading, babies]);
+  }, [hasHydrated, user, babiesLoading, babies]);
 
+  if (!hasHydrated || !user) return <Loading />;
   if (babiesLoading) return <Loading />;
 
+  const lastFeeding = feedings?.[0];
+  const lastFeedingTime = lastFeeding
+    ? new Date(lastFeeding.fedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    : null;
+  const hoursSinceLast = lastFeeding
+    ? Math.floor((Date.now() - new Date(lastFeeding.fedAt).getTime()) / (1000 * 60))
+    : null;
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* 헤더 */}
-      <div className="bg-indigo-500 text-white px-6 pt-12 pb-8 rounded-b-3xl">
-        <div className="flex justify-between items-start">
+    <div className="page">
+      <div className="page-header">
+        <div className="profile-icon">🐣</div>
+        <h1 className="app-title">AllergySafe Baby</h1>
+<span style={{ marginLeft: 'auto' }}>
+  <Link href="/notifications" style={{ color: 'var(--color-text-muted)', fontSize: 18, textDecoration: 'none' }}>
+    🔔
+  </Link>
+</span>      </div>
+
+      <div className="page-content">
+        <div className="card">
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+            안녕하세요, <span style={{ color: 'var(--color-primary)' }}>{baby?.name ?? user?.name}</span> 보호자님!
+          </p>
+          <p className="subtitle">
+            {baby?.ageMonths !== undefined ? `생후 ${baby.ageMonths * 30}일차, ` : ''}
+            오늘도 안전한 식사 시간을 응원해요.
+          </p>
+        </div>
+
+        <div className={styles.alertCard}>
+          <div className={styles.alertIcon}>🔔</div>
           <div>
-            <p className="text-indigo-200 text-sm">안녕하세요 👋</p>
-            <h1 className="text-2xl font-bold mt-1">{user?.name}님</h1>
+            <p className={styles.alertTitle}>
+              {hoursSinceLast !== null && hoursSinceLast >= 180 ? '다음 수유 시간이 지났어요!' : '다음 수유 시간이 다가와요!'}
+            </p>
+            <p className={styles.alertSub}>
+              {lastFeedingTime
+                ? `마지막 수유로부터 ${Math.floor((hoursSinceLast ?? 0) / 60)}시간 ${(hoursSinceLast ?? 0) % 60}분이 지났습니다.`
+                : '아직 수유 기록이 없어요.'}
+            </p>
           </div>
-          <button onClick={logout} className="text-indigo-200 text-sm">
-            로그아웃
-          </button>
-        </div>
-        {baby && <BabyProfile baby={baby} />}
-      </div>
-
-      <div className="px-6 mt-6 space-y-4">
-        {/* 오늘 통계 */}
-        <h2 className="text-lg font-bold text-gray-800">오늘의 기록</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <StatsCard
-            icon="🍼"
-            label="수유 횟수"
-            count={feedingStats?.totalCount ?? 0}
-            unit="회"
-            sub={`${feedingStats?.totalAmountMl ?? 0}ml`}
-            color="text-indigo-600"
-          />
-          <StatsCard
-            icon="🥕"
-            label="이유식 횟수"
-            count={mealStats?.totalCount ?? 0}
-            unit="회"
-            sub={`${mealStats?.totalAmountG ?? 0}g`}
-            color="text-orange-500"
-          />
         </div>
 
-        {/* 빠른 기록 */}
-        <h2 className="text-lg font-bold text-gray-800 mt-6">빠른 기록</h2>
-        <div className="space-y-3">
-          <QuickAction
-            href="/feeding/new"
-            icon="🍼"
-            bgColor="bg-indigo-100"
-            title="수유 기록하기"
-            desc="모유 · 분유 · 혼합"
-          />
-          <QuickAction
-            href="/meal/new"
-            icon="🥕"
-            bgColor="bg-orange-100"
-            title="이유식 기록하기"
-            desc="메뉴 · 양 · 반응"
-          />
-          <QuickAction
-            href="/food-guide"
-            icon="📋"
-            bgColor="bg-green-100"
-            title="식품 가이드"
-            desc="개월수별 먹을 수 있는 식품"
-          />
+        <div className={styles.statRow}>
+          <div className={`${styles.statCard} ${styles.yellow}`}>
+            <div className={styles.statIcon}>🍼</div>
+            <p className={`${styles.statLabel} ${styles.yellow}`}>오늘의 수유</p>
+            <p className={styles.statValue}>
+              {feedingStats?.totalCount ?? 0}회{' '}
+              <span className={`${styles.statValueSub} ${styles.yellow}`}>/ {feedingStats?.totalAmountMl ?? 0}ml</span>
+            </p>
+          </div>
+
+          <div className={`${styles.statCard} ${styles.mint}`}>
+            <div className={styles.statIcon}>🍽️</div>
+            <p className={`${styles.statLabel} ${styles.mint}`}>오늘의 이유식</p>
+            <p className={styles.statValue}>
+              {mealStats?.totalCount ?? 0}회{' '}
+              <span className={`${styles.statValueSub} ${styles.mint}`}>/ {mealStats?.totalAmountG ?? 0}g</span>
+            </p>
+          </div>
+        </div>
+
+        <div className={`card ${styles.observeCard}`}>
+          <div className={styles.observeHeader}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+              오늘의 알레르기 관찰
+            </p>
+            <span className={styles.badgeSuccess}>이상 없음</span>
+          </div>
+          <div className={styles.tagRow}>
+            {['우유', '달걀', '밀가루'].map((item) => (
+              <span key={item} className={styles.tag}>{item}</span>
+            ))}
+          </div>
+        </div>
+
+        <p className={styles.sectionTitle}>간단 기록</p>
+
+        <div className={styles.menuRow}>
+          <Link href="/feeding/new" className={styles.menuItem} style={{ background: '#F5EFE3' }}>
+            <span className={styles.menuIcon}>💉</span>
+            <span className={styles.menuLabel}>수유 기록</span>
+          </Link>
+
+          <Link href="/meal/new" className={styles.menuItem} style={{ background: '#FCDF9B' }}>
+            <span className={styles.menuIcon}>🍔</span>
+            <span className={styles.menuLabel}>이유식 기록</span>
+          </Link>
+
+          <Link href="/food-guide" className={styles.menuItem} style={{ background: '#D6EFE3' }}>
+            <span className={styles.menuIcon}>📋</span>
+            <span className={styles.menuLabel}>식품 가이드</span>
+          </Link>
+        </div>
+
+        <div className={styles.banner}>
+          <p className={styles.bannerTitle}>{baby?.name ?? '우리 아기'}의 건강한 성장을 위해</p>
+          <p className={styles.bannerSub}>오늘도 함께 노력해요.</p>
+          <div className={styles.bannerFab}>+</div>
         </div>
       </div>
 

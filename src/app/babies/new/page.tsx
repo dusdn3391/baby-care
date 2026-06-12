@@ -2,9 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBabies } from '@/hooks/useBaby';
-import Header from '@/components/common/Header';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
+import styles from './babies-new.module.css';
 
 export default function NewBabyPage() {
   const router = useRouter();
@@ -12,7 +10,7 @@ export default function NewBabyPage() {
   const [form, setForm] = useState({
     name: '',
     birthDate: '',
-    gender: '' as 'male' | 'female' | '',  // ← 타입 명시!
+    gender: '' as 'male' | 'female' | '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,11 +21,12 @@ export default function NewBabyPage() {
       return;
     }
     setLoading(true);
+    setError('');
     try {
       await addBaby({
         name: form.name,
         birthDate: form.birthDate,
-        gender: form.gender || undefined,  // ← 빈 문자열이면 undefined
+        gender: form.gender || undefined,
       });
       router.push('/');
     } catch {
@@ -38,58 +37,66 @@ export default function NewBabyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header title="아기 등록" />
+    <div style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 24px' }}>
+      <div className="profile-icon-lg">🐣</div>
 
-      <div className="px-6 mt-4 space-y-4">
-        <div className="text-center py-6">
-          <div className="text-6xl mb-2">🐣</div>
-          <p className="text-gray-500">아기 정보를 입력해주세요</p>
-        </div>
+      <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <h1 className="title-lg">아기 정보를 알려주세요</h1>
+        <p className="subtitle">
+          등록한 정보로 맞춤 이유식 가이드와
+          <br />
+          알레르기 케어를 시작할게요.
+        </p>
+      </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-          <Input
-            label="아기 이름"
-            value={form.name}
-            onChange={(v) => setForm({ ...form, name: v })}
-            placeholder="하준"
-            required
-          />
-          <Input
-            label="생년월일"
-            type="date"
-            value={form.birthDate}
-            onChange={(v) => setForm({ ...form, birthDate: v })}
-            required
-          />
-          <div>
-            <label className="text-sm text-gray-600 font-medium">성별</label>
-            <div className="flex gap-3 mt-2">
-              {[
-                { value: 'male' as const, label: '👦 남자아이' },
-                { value: 'female' as const, label: '👧 여자아이' },
-              ].map((g) => (
-                <button
-                  key={g.value}
-                  onClick={() => setForm({ ...form, gender: g.value })}
-                  className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-all ${
-                    form.gender === g.value
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
-                      : 'border-gray-200 text-gray-500'
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
+      <div className="card-lg" style={{ marginTop: 28 }}>
+        <div>
+          <label className="label-sm">아기 이름</label>
+          <div className="input-box">
+            <span className="input-icon">🐣</span>
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="하준"
+            />
           </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <Button onClick={handleSubmit} fullWidth loading={loading}>
-            등록하기
-          </Button>
         </div>
+
+        <div style={{ marginTop: 16 }}>
+          <label className="label-sm">생년월일</label>
+          <div className="input-box">
+            <span className="input-icon">📅</span>
+            <input
+              type="date"
+              value={form.birthDate}
+              onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <label className="label-sm">성별</label>
+          <div className={styles.genderRow}>
+            {[
+              { value: 'male' as const, label: '👦 남자아이' },
+              { value: 'female' as const, label: '👧 여자아이' },
+            ].map((g) => (
+              <button
+                key={g.value}
+                onClick={() => setForm({ ...form, gender: g.value })}
+                className={`choice-btn ${form.gender === g.value ? 'active' : ''}`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && <p className="error-text">{error}</p>}
+
+        <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ marginTop: 20 }}>
+          {loading ? '등록 중...' : '등록하고 시작하기'}
+        </button>
       </div>
     </div>
   );

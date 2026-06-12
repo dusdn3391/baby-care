@@ -1,0 +1,102 @@
+.toggleRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 14px 0;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #F5EFE3;
+  color: #A99B86;
+}
+
+.toggleBtn.active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-primary);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+}
+
+.stepperValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.stepperUnit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.stepperButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.stepperBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.reactionRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.reactionBtn {
+  flex: 1;
+  padding: 14px 0;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+}
+
+.reactionBtn.active {
+  border-color: #F5E3BC;
+  background: var(--color-primary-light);
+}
+
+.reactionEmoji {
+  font-size: 20px;
+}
+
+.reactionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.reactionLabel.active {
+  color: var(--color-primary-text);
+}

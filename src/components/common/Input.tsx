@@ -17,15 +17,15 @@ export default function Input({
 }: InputProps) {
   return (
     <div>
-      <label className="text-sm text-gray-600 font-medium">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="text-sm text-[#9B8F82] font-medium">
+        {label} {required && <span className="text-[#E76F6F]">*</span>}
       </label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full mt-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+        className="w-full mt-1.5 px-4 py-3 border border-[#F0E4D0] rounded-xl focus:outline-none focus:border-[#F5A623] bg-[#FDFBF6] text-[#4A3F35] placeholder:text-[#C9BEAF]"
       />
     </div>
   );

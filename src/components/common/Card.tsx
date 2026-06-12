@@ -8,7 +8,7 @@ export default function Card({ children, className, onClick }: CardProps) {
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl p-4 shadow-sm ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className ?? ''}`}
+      className={`bg-white rounded-2xl p-4 border border-[#F0E4D0] ${onClick ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''} ${className ?? ''}`}
     >
       {children}
     </div>

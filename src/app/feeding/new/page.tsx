@@ -3,14 +3,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBabies } from '@/hooks/useBaby';
 import { useFeeding } from '@/hooks/useFeeding';
-import Header from '@/components/common/Header';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
+import BottomNav from '@/components/common/BottomNav';
+import styles from '@/styles/record-form.module.css';
 
 const feedingTypes = [
-  { value: 'breast' as const, label: '🤱 모유' },
-  { value: 'formula' as const, label: '🍼 분유' },
-  { value: 'mixed' as const, label: '🔀 혼합' },
+  { value: 'breast' as const, label: '모유' },
+  { value: 'formula' as const, label: '분유' },
+  { value: 'mixed' as const, label: '혼합' },
 ];
 
 export default function NewFeedingPage() {
@@ -18,23 +17,22 @@ export default function NewFeedingPage() {
   const { babies } = useBabies();
   const baby = babies[0];
   const { addFeeding } = useFeeding(baby?.id ?? 0);
-const [type, setType] = useState<'breast' | 'formula' | 'mixed'>('formula'); // ← 타입 추가!
-  const [amount, setAmount] = useState('');
-  const [duration, setDuration] = useState('');
-  const [time, setTime] = useState(new Date().toISOString().slice(0, 16));
+  const [type, setType] = useState<'breast' | 'formula' | 'mixed'>('formula');
+  const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
     if (!baby) return;
     setLoading(true);
+    setError('');
     try {
       await addFeeding({
         babyId: baby.id,
         type,
-        amountMl: amount ? Number(amount) : undefined,
-        durationMin: duration ? Number(duration) : undefined,
-        fedAt: new Date(time).toISOString(),
+        amountMl: amount || undefined,
+        durationMin: type === 'breast' ? amount || undefined : undefined,
+        fedAt: new Date().toISOString(),
       });
       router.push('/feeding');
     } catch {
@@ -45,68 +43,52 @@ const [type, setType] = useState<'breast' | 'formula' | 'mixed'>('formula'); // 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header title="수유 기록" showBack />
+    <div className="page">
+      <div className="page-header">
+        <div className="profile-icon">🐣</div>
+        <h1 className="app-title">AllergySafe Baby</h1>
+      </div>
 
-      <div className="px-6 mt-4 space-y-4">
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-          {/* 수유 타입 */}
-          <div>
-            <label className="text-sm text-gray-600 font-medium">수유 방법</label>
-            <div className="flex gap-2 mt-2">
-              {feedingTypes.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => setType(t.value)}
-                  className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-all ${
-                    type === t.value
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
-                      : 'border-gray-200 text-gray-500'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+      <div className="page-content">
+        <h2 className="title-md">식사 기록하기</h2>
+        <p className="subtitle">아이의 영양 상태와 알레르기 반응을 기록하세요.</p>
+
+        <div style={{ marginTop: 20 }}>
+          <label className="label">수유 종류</label>
+          <div className={styles.toggleRow}>
+            {feedingTypes.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setType(t.value)}
+                className={`${styles.toggleBtn} ${type === t.value ? styles.active : ''}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <label className="label">양 (ml{type !== 'formula' ? ' / 분' : ''})</label>
+          <div className={styles.stepper}>
+            <span className={styles.stepperValue}>
+              {amount} <span className={styles.stepperUnit}>{type === 'formula' ? 'ml' : '분'}</span>
+            </span>
+            <div className={styles.stepperButtons}>
+              <button onClick={() => setAmount((v) => Math.max(0, v - 10))} className={styles.stepperBtn}>−</button>
+              <button onClick={() => setAmount((v) => v + 10)} className={styles.stepperBtn}>+</button>
             </div>
           </div>
-
-          {/* 분유/혼합: 양 입력 */}
-          {(type === 'formula' || type === 'mixed') && (
-            <Input
-              label="양 (ml)"
-              type="number"
-              value={amount}
-              onChange={setAmount}
-              placeholder="120"
-            />
-          )}
-
-          {/* 모유/혼합: 시간 입력 */}
-          {(type === 'breast' || type === 'mixed') && (
-            <Input
-              label="수유 시간 (분)"
-              type="number"
-              value={duration}
-              onChange={setDuration}
-              placeholder="10"
-            />
-          )}
-
-          <Input
-            label="수유 시간"
-            type="datetime-local"
-            value={time}
-            onChange={setTime}
-            required
-          />
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <Button onClick={handleSubmit} fullWidth loading={loading}>
-            기록하기
-          </Button>
         </div>
+
+        {error && <p className="error-text">{error}</p>}
+
+        <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ marginTop: 24 }}>
+          {loading ? '저장 중...' : '기록 완료하기'}
+        </button>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

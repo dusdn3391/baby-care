@@ -55,3 +55,24 @@ export const getMealStats = (babyId: number) =>
 // food-guide
 export const getFoodGuide = (ageMonths: number) =>
   api.get(`/food-guide/${ageMonths}`);
+
+// notification
+export const getVapidPublicKey = () => api.get('/notification/vapid-public-key');
+export const subscribePush = (data: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+  api.post('/notification/subscribe', data);
+export const createNotificationSetting = (data: {
+  babyId: number;
+  type: 'feeding' | 'meal';
+  mode: 'interval' | 'fixed';
+  intervalMin?: number;
+  fixedTimes?: string;
+  enabled?: boolean;
+}) => api.post('/notification/settings', data);
+export const getNotificationSettings = (babyId: number) =>
+  api.get(`/notification/settings/${babyId}`);
+export const getPendingLogs = (babyId: number) =>
+  api.get(`/notification/logs/pending/${babyId}`);
+export const respondLog = (data: { logId: number; status: 'done' | 'skipped' }) =>
+  api.post('/notification/logs/respond', data);
+export const deleteNotificationSetting = (id: number) =>
+  api.delete(`/notification/settings/${id}`);

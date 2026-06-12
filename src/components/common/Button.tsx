@@ -17,11 +17,11 @@ export default function Button({
   fullWidth,
   loading,
 }: ButtonProps) {
-  const base = 'py-3 px-6 rounded-xl font-medium transition-all disabled:opacity-50';
+  const base = 'py-3.5 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 active:scale-[0.98]';
   const variants = {
-    primary: 'bg-indigo-500 text-white hover:bg-indigo-600',
-    secondary: 'border border-gray-200 text-gray-600 hover:bg-gray-50',
-    danger: 'bg-red-500 text-white hover:bg-red-600',
+    primary: 'bg-[#F5A623] text-white shadow-sm shadow-[#F5A623]/30',
+    secondary: 'border-2 border-[#F0E4D0] text-[#4A3F35] bg-white',
+    danger: 'bg-[#E76F6F] text-white',
   };
 
   return (
